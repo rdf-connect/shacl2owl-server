@@ -1,0 +1,27 @@
+{
+  "name": "infer-owl-server",
+  "version": "1.0.0",
+  "description": "Secure web server that reasons over POSTed RDF with the eyeling N3 reasoner",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tspc",
+    "start": "node dist/index.js",
+    "dev": "tspc && concurrently -k -n tsc,node \"tspc -w --preserveWatchOutput\" \"node --watch dist/index.js\"",
+    "test": "tsx --test \"tests/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "^10.2.0",
+    "eyeling": "^2.35.0",
+    "fastify": "^5.2.0"
+  },
+  "devDependencies": {
+    "@ajuvercr/ts-transformer-inline-file": "^0.2.0",
+    "@types/node": "^22.10.0",
+    "concurrently": "^10.0.3",
+    "ts-patch": "^4.0.1",
+    "tsx": "^4.19.0",
+    "typescript": "^6.0.3"
+  },
+  "private": true
+}

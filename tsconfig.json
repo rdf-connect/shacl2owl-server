@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "rootDir": "src/",
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "plugins": [{ "transform": "@ajuvercr/ts-transformer-inline-file/transformer" }]
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

@@ -1,0 +1,43 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix rdfc: <https://w3id.org/rdf-connect#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+
+# datatype property rule
+{
+    ?shape a sh:NodeShape;
+        sh:property [
+            sh:path ?property;
+            sh:datatype ?datatype;
+            sh:name ?name
+        ].
+} => {
+    ?property a owl:DatatypeProperty;
+        rdfs:label ?name;
+        rdfs:domain rdfc:Processor;
+        rdfs:range ?datatype.
+} .
+
+# object property rule
+{
+    ?shape a sh:NodeShape;
+        sh:targetClass ?targetClass;
+        sh:property [
+            sh:path ?property;
+            sh:class ?class;
+            sh:name ?name
+        ].
+} => {
+    ?property a owl:ObjectProperty;
+        rdfs:label ?name;
+        rdfs:domain ?targetClass;
+        rdfs:range ?class.
+} .
+
+# targetClass property rule
+{
+    ?shape a sh:NodeShape;
+        sh:targetClass ?targetClass.
+} => {
+    ?targetClass a owl:Class.
+} .
