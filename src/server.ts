@@ -6,6 +6,9 @@ import Fastify, {type FastifyError, type FastifyInstance} from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import type {Config} from './config.js';
 import {ReasoningInputError, ReasoningTimeoutError, runReasoning} from './reasoner.js';
+import {$INLINE_FILE} from '@ajuvercr/ts-transformer-inline-file';
+
+const INDEX_HTML: string = $INLINE_FILE('./index.html');
 
 /** RDF media types we accept as a raw-text request body. */
 const RDF_CONTENT_TYPES = [
@@ -36,6 +39,8 @@ export async function buildServer(rulesN3: string, config: Config): Promise<Fast
       {parseAs: 'string', bodyLimit: config.maxBodyBytes},
       (_req, body, done) => done(null, body),
    );
+
+   app.get('/', async (_request, reply) => reply.type('text/html').send(INDEX_HTML));
 
    app.get('/health', async () => ({status: 'ok'}));
 

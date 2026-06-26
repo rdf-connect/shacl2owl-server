@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHACL2OWL Reasoner</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦉</text></svg>">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/eclipse.min.css">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f6f8;
+      color: #1e293b;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+    header p  { margin-top: 0.4rem; color: #64748b; font-size: 0.9rem; }
+
+    main {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ── explainer ────────────────────────────────────────────────────── */
+    .explainer {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1.4rem 1.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      font-size: 0.875rem;
+      line-height: 1.7;
+    }
+    .explainer h2 {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: -0.25rem;
+    }
+    .explainer p { color: #475569; }
+    .explainer strong { color: #1e293b; font-weight: 600; }
+    .explainer a { color: #4f46e5; text-decoration: none; }
+    .explainer a:hover { text-decoration: underline; }
+
+    .explainer .steps { display: flex; flex-direction: column; gap: 0.5rem; }
+    .explainer .step  { display: flex; gap: 0.75rem; align-items: flex-start; }
+    .step-num {
+      flex-shrink: 0;
+      width: 1.35rem; height: 1.35rem;
+      border-radius: 50%;
+      background: #e0e7ff; color: #4f46e5;
+      font-size: 0.7rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 0.15rem;
+    }
+
+    .explainer code, .curl-block {
+      font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+      font-size: 0.78rem;
+    }
+    .explainer code {
+      background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px;
+      padding: 0.1em 0.4em; color: #0369a1;
+    }
+    .curl-block {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 0.75rem 1rem; color: #0369a1;
+      white-space: pre; overflow-x: auto;
+    }
+
+    /* ── playground ───────────────────────────────────────────────────── */
+    .pane { display: flex; flex-direction: column; gap: 0.4rem; }
+    .pane-header { display: flex; align-items: center; justify-content: space-between; }
+    .pane label {
+      font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8;
+    }
+
+    /* CodeMirror overrides */
+    .CodeMirror {
+      font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      height: 220px;
+      background: #fff;
+    }
+    .CodeMirror-focused { border-color: #6366f1; }
+    .CodeMirror-scroll  { border-radius: 8px; }
+
+    #output-pane .CodeMirror {
+      height: auto;
+      min-height: 120px;
+      cursor: default;
+    }
+    #output-pane.is-empty .CodeMirror-code { opacity: 0; }
+    #output-pane.is-empty::after {
+      content: "Results will appear here.";
+      position: absolute;
+      top: 0.85rem; left: 1rem;
+      font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+      font-size: 0.82rem; font-style: italic; color: #cbd5e1;
+      pointer-events: none;
+    }
+    #output-pane { position: relative; }
+    #output-pane.is-error .CodeMirror { color: #dc2626; }
+
+    .actions { display: flex; gap: 0.75rem; align-items: center; }
+
+    button {
+      padding: 0.5rem 1.2rem;
+      border-radius: 6px; border: none;
+      font-size: 0.82rem; font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    #run     { background: #6366f1; color: #fff; }
+    #run:hover:not(:disabled) { background: #4f46e5; }
+
+    #example { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    #example:hover { background: #e2e8f0; }
+
+    #clear   { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    #clear:hover { background: #e2e8f0; }
+
+    #status  { font-size: 0.8rem; color: #94a3b8; margin-left: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SHACL2OWL Reasoner</h1>
+    <p>Derive OWL statements from <a href="https://w3id.org/rdf-connect" style="color:#4f46e5;text-decoration:none">RDF-Connect</a> processor definitions.</p>
+  </header>
+
+  <main>
+
+    <!-- ── explainer ─────────────────────────────────────────────────── -->
+    <section class="explainer">
+      <div>
+        <h2>What is this?</h2>
+        <p>
+          When you write an <strong>RDF-Connect processor definition</strong> you describe its
+          configurable properties using <strong>SHACL shapes</strong> — because that's what the
+          framework uses at runtime. You don't think about OWL semantics: property domains, ranges,
+          or class declarations feel like unnecessary boilerplate there.
+        </p>
+        <p>
+          But <strong>LSP servers</strong> (like the <a href="https://github.com/semanticWebLanguageServer/swls">Semantic Web Language Server</a>) <em>do</em> need those
+          OWL triples to give you good autocompletion and type-checking in your editor. This server
+          bridges the gap: POST your definition and get back the OWL statements that can be inferred
+          from it — without touching the original file.
+        </p>
+      </div>
+
+      <div>
+        <h2>Use it at build time</h2>
+        <p>Pipe your definition through <code>/reason</code> and append the result to enrich the file:</p>
+        <div class="curl-block" id="curl-example">curl -sS -X POST https://owl.ajuvercr.be/reason \
+     -H "Content-Type: text/turtle" \
+     --data-binary @processor.ttl \
+  >> processor.ttl</div>
+      </div>
+
+      <div>
+        <h2>What gets inferred?</h2>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><span>Each <code>sh:property</code> with a <code>sh:path</code> becomes an <code>owl:ObjectProperty</code> or <code>owl:DatatypeProperty</code> with proper <code>rdfs:domain</code> and <code>rdfs:range</code>.</span></div>
+          <div class="step"><div class="step-num">2</div><span>The <code>sh:targetClass</code> is declared as an <code>owl:Class</code> so editors recognise it as a type.</span></div>
+          <div class="step"><div class="step-num">3</div><span>Human-readable labels from <code>sh:name</code> are forwarded as <code>rdfs:label</code> on the property.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── playground ────────────────────────────────────────────────── -->
+    <div class="pane">
+      <div class="pane-header">
+        <label>Input (Turtle / N3)</label>
+        <button id="example">Load example</button>
+      </div>
+      <textarea id="input"></textarea>
+    </div>
+
+    <div class="actions">
+      <button id="run">Evaluate</button>
+      <button id="clear">Clear</button>
+      <span id="status"></span>
+    </div>
+
+    <div class="pane">
+      <label>Inferred triples</label>
+      <div id="output-pane" class="is-empty">
+        <div id="output-editor"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/turtle/turtle.min.js"></script>
+  <script type="module">
+    const EXAMPLE = `@prefix rdfc: <https://w3id.org/rdf-connect#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix sh:   <http://www.w3.org/ns/shacl#>.
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#>.
+
+rdfc:TemplateProcessorJs rdfc:jsImplementationOf rdfc:Processor;
+    rdfs:label "JS/TS Template Processor";
+    rdfs:comment "Template processor to kickstart the development of your next TypeScript RDF-Connect processor.";
+    rdfc:file <./lib/index.js>;
+    rdfc:class "TemplateProcessor";
+    rdfc:entrypoint <./>.
+
+[ ] a sh:NodeShape;
+    sh:targetClass rdfc:TemplateProcessorJs;
+    sh:property [
+        sh:class rdfc:Reader;
+        sh:path rdfc:reader;
+        sh:name "reader";
+        sh:minCount 1;
+        sh:maxCount 1;
+    ], [
+        sh:class rdfc:Writer;
+        sh:path rdfc:writer;
+        sh:name "writer";
+        sh:minCount 0;
+        sh:maxCount 1;
+    ].`;
+
+    document.getElementById('curl-example').textContent =
+      `curl -sS -X POST ${location.origin}/reason \\\n     -H "Content-Type: text/turtle" \\\n     --data-binary @processor.ttl \\\n  >> processor.ttl`;
+
+    const CM_OPTS = { theme: 'eclipse', mode: 'text/turtle', indentWithTabs: false, tabSize: 2 };
+
+    const inputEditor = CodeMirror.fromTextArea(document.getElementById('input'), {
+      ...CM_OPTS,
+      lineNumbers: true,
+      autofocus: true,
+    });
+    inputEditor.setSize(null, 220);
+
+    const outputPane   = document.getElementById('output-pane');
+    const outputEditor = CodeMirror(document.getElementById('output-editor'), {
+      ...CM_OPTS,
+      readOnly: true,
+      lineNumbers: false,
+      cursorBlinkRate: -1,
+    });
+    outputEditor.setSize(null, null);
+
+    const status = document.getElementById('status');
+    const runBtn = document.getElementById('run');
+
+    function setStatus(msg, isErr = false) {
+      status.textContent = msg;
+      status.style.color = isErr ? '#dc2626' : '#94a3b8';
+    }
+
+    function setOutput(text, state) {
+      outputPane.className = state === 'empty' ? 'is-empty' : state === 'error' ? 'is-error' : '';
+      outputEditor.setOption('mode', state === 'error' ? null : 'text/turtle');
+      outputEditor.setValue(text);
+    }
+
+    document.getElementById('example').addEventListener('click', () => {
+      inputEditor.setValue(EXAMPLE);
+      setStatus('');
+    });
+
+    document.getElementById('clear').addEventListener('click', () => {
+      inputEditor.setValue('');
+      setOutput('', 'empty');
+      setStatus('');
+    });
+
+    runBtn.addEventListener('click', async () => {
+      const body = inputEditor.getValue().trim();
+      if (!body) { setStatus('Nothing to evaluate.', true); return; }
+
+      runBtn.disabled = true;
+      setStatus('Reasoning…');
+      setOutput('', 'empty');
+
+      try {
+        const res = await fetch('/reason', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/turtle' },
+          body,
+        });
+
+        const text = await res.text();
+
+        if (res.ok) {
+          if (text.trim() === '') {
+            setOutput('', 'empty');
+            setStatus('Done — no new triples inferred.');
+          } else {
+            setOutput(text, 'ok');
+            setStatus('Done.');
+          }
+        } else {
+          let msg;
+          try { msg = JSON.parse(text).error ?? text; } catch { msg = text; }
+          setOutput(`HTTP ${res.status}: ${msg}`, 'error');
+          setStatus('Error', true);
+        }
+      } catch (err) {
+        setOutput(`Network error: ${err.message}`, 'error');
+        setStatus('Error', true);
+      } finally {
+        runBtn.disabled = false;
+      }
+    });
+
+    inputEditor.addKeyMap({
+      'Ctrl-Enter': () => runBtn.click(),
+      'Cmd-Enter':  () => runBtn.click(),
+    });
+  </script>
+</body>
+</html>
