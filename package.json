@@ -1,5 +1,5 @@
 {
-  "name": "infer-owl-server",
+  "name": "shacl2owl-server",
   "version": "1.0.0",
   "description": "Secure web server that reasons over POSTed RDF with the eyeling N3 reasoner",
   "type": "module",

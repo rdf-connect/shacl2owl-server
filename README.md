@@ -1,4 +1,4 @@
-# infer-owl-server
+# shacl2owl-server
 
 A small, secure web server that reasons over RDF you POST to it. It applies a fixed
 set of [Notation3 (N3)](https://notation3.org/) rules with the
@@ -10,6 +10,7 @@ processors' SHACL `NodeShape` property constraints to OWL property declarations:
 
 - a property with `sh:datatype` → `owl:DatatypeProperty` (with `rdfs:label`, `rdfs:domain rdfc:Processor`, `rdfs:range`)
 - a property with `sh:class` → `owl:ObjectProperty` (likewise)
+- a node with `sh:targetClass` → `owl:Class`
 
 ## How it works
 
@@ -130,7 +131,7 @@ A common use case: a project ships a `processor.ttl` describing an
 [RDF-Connect](https://w3id.org/rdf-connect) processor as SHACL shapes, and wants the
 **reasoned** version (with the derived OWL property declarations) in its build output.
 The script below reads the local `processor.ttl`, sends it to a running
-`infer-owl-server`, and writes the reasoned result over the copy in the build output.
+`shacl2owl-server`, and writes the reasoned result over the copy in the build output.
 
 `scripts/reason-processor.mjs` (in the *consuming* project):
 
