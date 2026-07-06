@@ -21,7 +21,6 @@
 # object property rule
 {
     ?shape a sh:NodeShape;
-        sh:targetClass ?targetClass;
         sh:property [
             sh:path ?property;
             sh:class ?class;
