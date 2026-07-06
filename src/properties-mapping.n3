@@ -30,7 +30,7 @@
 } => {
     ?property a owl:ObjectProperty;
         rdfs:label ?name;
-        rdfs:domain ?targetClass;
+        rdfs:domain rdfc:Processor;
         rdfs:range ?class.
 } .
 
